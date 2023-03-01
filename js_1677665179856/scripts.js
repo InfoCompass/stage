@@ -66382,6 +66382,7 @@ angular.module('icFilters', [
 					'instagram':	'',
 					'pinterest':	'',
 					'youtube':		'',
+					'vimeo': 		'',
 					'mobile':		'tel:',
 					'email':		'mailto:',
 					'phone':		'tel:'
