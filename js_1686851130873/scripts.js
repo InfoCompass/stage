@@ -58800,15 +58800,13 @@ module.exports = angular;
 		],
 
 		institution_type: [
-			'library',			//Bibliothek
-			'volkshochschule',			//Volkshochschule
 			'meeting_place',			//Begegnungsstätte
 			'multigenerational_house', 	//Mehrgenerationenhaus
 			'district_center',			//Stadtteilzentrum
 			'family_center',			//Familienzentrum
 			'counseling_center',		//Beratungsstelle
 			'neighborhood_center',		//Nachbarschaftstreff
-			// 'misc_institution' 			//andere
+			'misc_institution' 			//andere
 		],
 
 		extra: [
@@ -62766,6 +62764,7 @@ angular.module('icServices', [
 
 			icUser.ready.then(function(){
 
+
 				if(icUser.can('edit_items')){
 
 					icItemStorage.ready
@@ -62783,7 +62782,7 @@ angular.module('icServices', [
 					icTaxonomy.addExtraTag('state_public', 			'state')
 					icTaxonomy.addExtraTag('state_draft', 			'state')
 					icTaxonomy.addExtraTag('state_suggestion',		'state')
-					icTaxonomy.addExtraTag('state_archived', 		'state')
+					icTaxonomy.addExtraTag('state_archived', 		'state')					
 
 					if(icItemConfig.properties.map(property => property.name).includes('proposals')){
 						icTaxonomy.addExtraTag('state_has_proposals', 	'state')
@@ -62791,7 +62790,16 @@ angular.module('icServices', [
 
 				}				
 
+				icTaxonomy.addExtraTag('remote')
+
+				icItemStorage.ready
+				.then( () => {	
+					icItemStorage.registerFilter('remote', item => item.remoteItem != undefined)
+				})
+
+
 			})
+
 
 
 			$rootScope.$watch(
@@ -63171,6 +63179,9 @@ angular.module('icServices', [
 						.includes(tag)
 			}
 
+			icTaxonomy.isSubCategory = function(tag){
+				return icTaxonomy.getSubCategories(tag).includes(tag)
+			}
 
 			icTaxonomy.isUnsortedTag = function(tag){
 				return 	Object.values(icTaxonomy.tags)
@@ -63180,8 +63191,12 @@ angular.module('icServices', [
 
 			icTaxonomy.getTagKind = function(tag){
 				if(icTaxonomy.isType(tag)) 			return 'types'
-				if(icTaxonomy.isCategory(tag)) 		return 'categories'
-				if(icTaxonomy.isUnsortedTag(tag)) 	return 'unsorted_tags'
+				if(
+					icTaxonomy.isCategory(tag)
+					||
+					icTaxonomy.isSubCategory(tag)
+				) 									return 'categories'
+				if(icTaxonomy.isUnsortedTag(tag)) 	return 'unsorted_tags'					
 
 				return undefined	
 			}
@@ -64933,10 +64948,14 @@ angular.module('icDirectives', [
 
 
 .directive('icItemFullFooter',[
-	'ic',
+	'icSite',
 	'icItemStorage',
+	'icItemEdits',
+	'icUser',
+	'ic',
+	'$q',
 
-	function(ic, icItemStorage){
+	function(icSite, icItemStorage, icItemEdits, icUser, ic, $q){
 		return {
 			restrict:		'AE',
 			templateUrl:	'partials/ic-item-full-footer.html',
@@ -64958,6 +64977,11 @@ angular.module('icDirectives', [
 										:	emptyArray
 
 				})
+
+				scope.editCopy = function(){
+					icSite.activeItem 	= icItemStorage.newItem(icSite.activeItem.id)
+					icSite.editItem		= true
+				}
 			}
 		}
 	}
@@ -65006,11 +65030,6 @@ angular.module('icDirectives', [
 									}
 								)
 					})
-				}
-
-				scope.editCopy = function(){
-					icSite.activeItem 	= icItemStorage.newItem(icSite.activeItem.id)
-					icSite.editItem		= true
 				}
 
 				scope.cancel = function(){
@@ -70334,7 +70353,7 @@ angular.module('icUiDirectives', [
 					pickerMarker.on('dragend ', function(event){
 						icMainMap.picker.latitude 	= event.target._latlng.lat
 						icMainMap.picker.longitude	= event.target._latlng.lng
-						//icMainMap.scope.$digest()
+						scope.$digest()
 					})
 					
 
